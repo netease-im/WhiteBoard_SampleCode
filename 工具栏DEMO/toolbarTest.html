@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>ToolbarTest</title>
+  <style media="screen">
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+    }
+
+    canvas {
+      /* image-rendering: optimizeSpeed; */
+      image-rendering: pixelated;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: optimize-contrast;
+      -ms-interpolation-mode: nearest-neighbor;
+      transform: translate3d(0, 0, 0);
+    }
+
+    #app {
+      position: fixed !important;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+    }
+
+
+    #wb {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      height: 100%;
+      background: #eeeeee;
+    }
+
+    #tb {
+      /* */
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 46px;
+      z-index: 999;
+      pointer-events: none;
+      /*
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 46px;
+      height: 100%;
+      z-index: 99;
+      /* */
+    }
+
+    #js-video {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 400px;
+      height: 300px;
+    }
+
+    input::placeholder,
+    input::-webkit-input-placeholder,
+    input::-moz-placeholder {
+      line-height: normal !important;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+    <div id="wb"></div>
+    <div id="tb"></div>
+  </div>
+  <!-- <div id="js-video"></div> -->
+
+  <script src="../sdk/NIM_Web_NIM_v7.1.0.js"></script>
+  <script src="../sdk/NIM_Web_WhiteBoard_v7.1.0.js"></script>
+
+  <script src="../sdk/DrawPlugin.2.0.0.js"></script>
+  <script src="../sdk//DrawPluginUI.2.0.0.js"></script>
+  <!-- <script src="../dist/DrawPluginUI.js"></script> -->
+  <!-- <script src="/public/vconsole.min.js"></script>
+  <script>
+    if (location.hash) { var vConsole = new VConsole(); } 
+  </script> -->
+
+  <script>
+    var whiteboard;
+    NIM.use(WhiteBoard)
+
+    var handler;
+
+    const identity = 'owner'
+    const account = 'cs1';
+    const owerAccount = 'cs1';
+    const channelName = 'supertestname'
+    // 初始化NIM，为了兼容老版本，录制回放的播放图片PPT的时候需要用nim去获取文件
+    var nim = NIM.getInstance({
+      db: false,
+      debug: false,//param.debug,
+      appKey: "", // 替换为自己的appkey
+      account: account,
+      token: 'e10adc3949ba59abbe56e057f20f883e',
+      onconnect: function (event) {
+        initWB()
+        console.log(nim)
+      },
+      onerror: function (event) {
+        console.error('im onerror:', event)
+        // onNativeFunction('webError', {
+        //   code: 400,
+        //   msg: event.message || 'im onerror 网络状态异常'
+        // })
+      },
+      onwillreconnect: function (event) {
+        console.log('im onwillreconnect:', event)
+        // onNativeFunction('webReconnect')
+      },
+      ondisconnect: function (error) {
+        let msg = ''
+        switch (error.code) {
+          case 302:
+            msg = '帐号或密码错误'
+            break
+          case 'kicked':
+            const map = {
+              PC: '电脑版',
+              Web: '网页版',
+              Android: '手机版',
+              iOS: '手机版',
+              WindowsPhone: '手机版'
+            }
+            msg = `您的帐号被${map[error.from] || '其他端'}踢出下线`
+            break
+          default:
+        }
+        // onNativeFunction('webLoginIMFailed', {
+        //   code: error.code,
+        //   msg: msg || error.message || '连接断开'
+        // })
+        nim.destroy()
+      }
+    })
+
+
+    function initWB() {
+      whiteboard = WhiteBoard.getInstance({
+        nim: nim,
+        debug: true
+      })
+      window.whiteboard = whiteboard
+      joinChannel()
+    }
+
+
+    function joinChannel() {
+      whiteboard.joinChannel({
+        channelName: channelName, ///initParam.channelName,
+        sessionConfig: {
+          record: true//initParam.record // background 。。。
+        }
+      }).then(function (obj) {
+        console.log('whiteboard::joinChannel success', obj)
+        whiteboard.startSession().then(function () {
+          onWBInited()
+        })
+      }).catch(function (err) {
+        console.error('whiteboard::joinChannel failed', err)
+        if (err && err.event && err.event.code === 404 && identity === 'owner') { // 已创建房间
+          createChannel()
+          return
+        }
+
+        whiteboard.leaveChannel()
+      })
+    }
+
+    function createChannel() {
+      whiteboard.createChannel({
+        channelName: channelName
+      }).then(function (obj) {
+        console.log('whiteboard::createChannel success', obj)
+        joinChannel()
+      }).catch(function (err) {
+        console.error('whiteboard::createChannel failed', err)
+        if (err && err.event && err.event.code === 417) { // 已创建房间
+          joinChannel()
+        } else {
+
+          whiteboard.leaveChannel()
+        }
+      })
+    }
+
+    function onWBInited() {
+      // onNativeFunction('webJoinWBSucceed') // 通知 native 加入房间成功
+      // if (toolbar) return
+      console.log('onWBInited');
+      handler = DrawPlugin.getInstance({
+        debug: true,
+        width: 200,
+        height: 200,
+        account: account,
+        ownerAccount: owerAccount,
+        identity: identity, // 默认成员 'normal'
+        appKey: "", // 替换为自己的key
+        whiteboardContainer: document.getElementById('wb'),
+        nim: nim,
+        whiteboard: whiteboard
+      })
+      handler.on('customEvent', function (event) {
+
+        if (event === 'selectDoc') {
+
+          // 一般是弹出界面，让用户选择使用那个文件
+          // 这里是自定义传入一个文档图片，所以使用的是setFileObjRaw,如果是使用nim转码的文档，请使用setFileObj
+          handler.setFileObjRaw({
+            currentPage: 1,
+            docId: "c83e6ff4-297e-4fc3-b0c0-a0294776cb12",
+            type: "img",
+            pageCount: "13",
+            url: "http://nim.nosdn.127.net/60a9143c-146d-42f0-b55e-d8009dadc9e4_2_1.jpg",
+            urlStr: "http://nim.nosdn.127.net/60a9143c-146d-42f0-b55e-d8009dadc9e4_2_{index}.jpg",
+          })
+        } else if (event === 'closeDoc') {
+          handler.clearFile()
+        }
+      })
+      handler.on('inited', function () {
+        // 必须调用这个去同步数据，在断线重连之后，也需要重新去同步
+        handler.readyToSyncData();
+        handler.enableDraw(true)
+        handler.setSize(6)
+        handler.setTool("free"); // 使用自由画笔工具，
+        DrawPluginUI.mount(document.getElementById('tb'), { account, identity }, handler, {
+          toolbar: [
+            'flag', 'free', 'text', 'fill',
+            { type: 'shapes', items: ['line', 'rect', 'circle'] },
+            { type: 'formats', fontsize: [23, 30, 44] },
+            'erase', 'undo', 'redo', 'clear',
+            { type: 'customTXT', label: '文档库', eventName: 'selectDoc' }
+          ]
+        })
+      })
+
+      window.handler = handler;
+
+      var isReconnecting
+      whiteboard.on('connected', () => {
+        // 如果断线重连之后，重新连上，
+        if (isReconnecting) {
+          isReconnecting = false
+          if (this.drawPlugin) {
+            this.drawPlugin.readyToSyncData()
+          }
+        }
+      });
+
+      whiteboard.on('willReconnect', () => {
+        // 标记重连
+        isReconnecting = true;
+      })
+
+      /**
+       * RecordPlayerUI
+       */
+      whiteboard.on('error', function (err) { // 非正常情况处理
+        console.error('whiteboard onError:', err)
+        // onNativeFunction('webError', {
+        //   code: 400,
+        //   msg: err.message || 'whiteboard onerror 网络状态异常'
+        // })
+      })
+      whiteboard.on('signalClosed', function (obj) {
+        console.error('whiteboard signalClosed:', obj)
+        // onNativeFunction('webError', {
+        //   code: 400,
+        //   msg: 'whiteboard signal closed 网络状态异常'
+        // })
+      })
+    }
+  </script>
+  <script type="text/javascript">
+
+  </script>
+</body>
+
+</html>

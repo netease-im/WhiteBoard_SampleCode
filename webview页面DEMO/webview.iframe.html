@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Whiteboard</title>
+
+  </style>
+</head>
+
+<body>
+  <div id="app">
+    <iframe width="400" height="700" src="./webview.html"></iframe>
+  </div>
+
+
+  <!-- <script src="/public/vconsole.min.js"></script>
+  <script>if (location.hash) { var vConsole = new VConsole(); } </script> -->
+  <script type="text/javascript">
+
+    // 模拟原生的NativeFuction
+    window.frames[0].window.NativeFunction = function (msgStr) {
+      var msg = JSON.parse(msgStr);
+
+      // 模拟原生的收到，webWBWorkerInited 事件后
+      if (msg.action == 'webWBWorkerInited') {
+
+        // 模拟原生端允许交互
+        window.WebJSBridge(JSON.stringify({
+          action: 'enableDraw',
+          param: {
+            enable: true
+          }
+        }))
+      } else if (msg.action === 'webToolbarCustomEvent') {
+        if (msg.param.eventName === 'selectDoc') {
+          window.WebJSBridge(JSON.stringify({
+            action: 'setFileObj',
+            param: {
+              "docId": "8bae75fb-2a88-42c6-8395-8756b8b91506",
+              "docName": "Qt界面开发.pptx",
+              "urlPrefix": "http:\/\/nim.nosdn.127.net\/f30507ee-0844-4329-9441-7339815d6764",
+              "docSize": 1046599,
+              "docType": "PPTX",
+              "transStat": "Completed",
+              "transType": "PNG",
+              "transSize": 37204212,
+              "pageNum": 13,
+              "extra": "",
+              "picInfo": [
+                {
+                  "duration": 142171,
+                  "height": 1080,
+                  "width": 0,
+                  "type": "HIGH",
+                  "size": 21749827
+                },
+                {
+                  "duration": 142171,
+                  "height": 720,
+                  "width": 0,
+                  "type": "MEDIUM",
+                  "size": 10507133
+                },
+                {
+                  "duration": 142171,
+                  "height": 480,
+                  "width": 0,
+                  "type": "LOW",
+                  "size": 4947252
+                }
+              ]
+            }
+          }))
+        } else if (msg.param.eventName === 'closeDoc') {
+          window.WebJSBridge(JSON.stringify({
+            action: 'clearFile',
+          }))
+        }
+        console.log('webToolbarCustomEvent')
+      }
+      console.log('get msg ', msg);
+    }
+    var timer = setInterval(function () {
+      if (typeof window.frames[0].WebJSBridge === 'function') {
+        window.WebJSBridge = window.frames[0].WebJSBridge;
+        clearInterval(timer)
+        // 当网页ready的时候，登录IM, 原生端应该在NativeFuction里监听的，这里是iframe收不到webview传过来初始化的消息
+        init()
+      }
+
+    }, 20);
+
+    function init() {
+      //    // 模拟原生端发送登录的参数
+      window.WebJSBridge(JSON.stringify({
+        action: 'webLoginIM',
+        param: {
+          // mode: 'interaction', // 回放模式 为 'player'
+          debug: true,
+          appKey: '', // 请替换成自己的appKey
+          account: 'ljm2',
+
+          token: 'e10adc3949ba59abbe56e057f20f883e',
+          identity: 'owner',// 'owner', // 默认成员 'normal'
+          channelName: '70776582',
+          ownerAccount: 'ljm2',
+          record: true, // 开启录制
+          tools: {
+            default: {
+              color: '#334455',
+              size: 6,
+            },
+            toolbar: [
+              'flag', 'free', 'text', 'fill',
+              { type: 'shapes', items: ['line', 'rect', 'ellipse'] },
+              { type: 'formats', label: 'https://secure.gravatar.com/avatar/6e51488a7fcf7d9113d7fbdd2bfc962d?s=86' },
+              'erase', 'undo', 'redo', 'clear',
+              { type: 'customTXT', label: '文档库', eventName: 'selectDoc' },
+              { type: 'customIMG', label: 'https://secure.gravatar.com/avatar/6e51488a7fcf7d9113d7fbdd2bfc962d?s=86', eventName: 'fill' },
+              { type: 'customSVG', label: '<svg t="1575428330506" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1184" width="200" height="200"><path d="M512 727.9c-57.7 0-111.9-22.5-152.7-63.2s-63.2-95-63.2-152.7 22.5-111.9 63.2-152.7 95-63.2 152.7-63.2 111.9 22.5 152.7 63.2 63.2 95 63.2 152.7-22.5 111.9-63.2 152.7-95 63.2-152.7 63.2z m0-397.2c-100 0-181.3 81.4-181.3 181.3S412 693.3 512 693.3 693.3 612 693.3 512 612 330.7 512 330.7z" p-id="1185"></path><path d="M512 512m-86.4 0a86.4 86.4 0 1 0 172.8 0 86.4 86.4 0 1 0-172.8 0Z" p-id="1186"></path><path d="M900.6 520.6h-86.4c-14.3 0-25.9-11.6-25.9-25.9 0-14.3 11.6-25.9 25.9-25.9h86.4c14.3 0 25.9 11.6 25.9 25.9 0 14.3-11.6 25.9-25.9 25.9zM209.8 520.6h-86.4c-14.3 0-25.9-11.6-25.9-25.9 0-14.3 11.6-25.9 25.9-25.9h86.4c14.3 0 25.9 11.6 25.9 25.9 0 14.3-11.6 25.9-25.9 25.9zM486.1 209.8v-86.4c0-14.3 11.6-25.9 25.9-25.9 14.3 0 25.9 11.6 25.9 25.9v86.4c0 14.3-11.6 25.9-25.9 25.9-14.3 0-25.9-11.6-25.9-25.9zM247.9 319.1L186.8 258c-10.1-10.1-10.1-26.5 0-36.6 10.1-10.1 26.5-10.1 36.6 0l61.1 61.1c10.1 10.1 10.1 26.5 0 36.6-10.1 10.1-26.5 10.1-36.6 0zM739.5 282.4l61.1-61.1c10.1-10.1 26.5-10.1 36.6 0 10.1 10.1 10.1 26.5 0 36.6L776.1 319c-10.1 10.1-26.5 10.1-36.6 0-10.1-10.1-10.1-26.5 0-36.6zM417 762.4h190c14.3 0 25.9 11.6 25.9 25.9 0 14.3-11.6 25.9-25.9 25.9H417c-14.3 0-25.9-11.6-25.9-25.9 0-14.3 11.6-25.9 25.9-25.9zM460.2 848.8h103.6c9.5 0 17.3 7.7 17.3 17.3 0 9.5-7.7 17.3-17.3 17.3H460.2c-9.5 0-17.3-7.7-17.3-17.3 0-9.6 7.7-17.3 17.3-17.3z" p-id="1187"></path><path d="M512 892m-34.5 0a34.5 34.5 0 1 0 69 0 34.5 34.5 0 1 0-69 0Z" p-id="1188"></path></svg>', eventName: 'selectDoc' }
+            ]
+          }
+        }
+      }))
+    }
+
+
+
+  </script>
+</body>
+
+</html>

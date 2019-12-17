@@ -1,0 +1,13 @@
+{
+  "presets": [
+    // disable modules for webpack HMR
+    ["env", { "modules":false }]
+  ],
+  "plugins": [ // order is important
+    "styled-jsx/babel",
+    ["transform-runtime", {
+      "regenerator": true
+    }],
+    ["transform-react-jsx", { "pragma":"h" }]
+  ]
+}

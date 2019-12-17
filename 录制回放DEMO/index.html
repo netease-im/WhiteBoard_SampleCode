@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Whiteboard</title>
+  <style media="screen">
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+    }
+
+    canvas {
+      /* image-rendering: optimizeSpeed; */
+      image-rendering: pixelated;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: optimize-contrast;
+      -ms-interpolation-mode: nearest-neighbor;
+      transform: translate3d(0, 0, 0);
+    }
+
+    #app {
+      position: fixed !important;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+    }
+
+    #wb {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      height: 100%;
+    }
+
+    #tb {
+      /* */
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 46px;
+      z-index: 999;
+      /*
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 46px;
+      height: 100%;
+      z-index: 99;
+      /* */
+    }
+
+    #js-video {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 400px;
+      height: 300px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+    <div id="wb"></div>
+    <div id="tb"></div>
+  </div>
+  <div id="js-video"></div>
+
+
+  <script src="../sdk/NIM_Web_NIM_v7.1.0.js"></script>
+  <script src="../sdk/NIM_Web_WhiteBoard_v7.1.0.js"></script>
+
+
+  <script src="../sdk/RecordPlayer.2.0.0.js"></script>
+  <script src="../sdk//RecordPlayerUI.2.0.0.js"></script>
+  <!-- <script src="../dist/RecordPlayerUI.js"></script> -->
+  <!-- <script src="/vconsole.min.js"></script>
+  <script>
+    if (location.hash) { var vConsole = new VConsole(); } 
+  </script> -->
+
+  <script>
+    // 初始化NIM，为了兼容老版本，录制回放的播放图片PPT的时候需要用nim去获取文件
+    // 如果白板录制文件是新版本，可以不需要NIM
+    var nim = NIM.getInstance({
+      db: false,
+      debug: false,//param.debug,
+      appKey: "", // 替换为自己appkey
+      account: 'cs1',
+      token: 'e10adc3949ba59abbe56e057f20f883e',
+      onconnect: function (event) {
+
+        console.log(nim)
+      },
+      onerror: function (event) {
+        console.error('im onerror:', event)
+        onNativeFunction('webError', {
+          code: 400,
+          msg: event.message || 'im onerror 网络状态异常'
+        })
+      },
+      onwillreconnect: function (event) {
+        console.log('im onwillreconnect:', event)
+        onNativeFunction('webReconnect')
+      },
+      ondisconnect: function (error) {
+        let msg = ''
+        switch (error.code) {
+          case 302:
+            msg = '帐号或密码错误'
+            break
+          case 'kicked':
+            const map = {
+              PC: '电脑版',
+              Web: '网页版',
+              Android: '手机版',
+              iOS: '手机版',
+              WindowsPhone: '手机版'
+            }
+            msg = `您的帐号被${map[error.from] || '其他端'}踢出下线`
+            break
+          default:
+        }
+        onNativeFunction('webLoginIMFailed', {
+          code: error.code,
+          msg: msg || error.message || '连接断开'
+        })
+        im.destroy()
+      }
+    })
+  </script>
+  <script type="text/javascript">
+
+    //这个是SDK提供的工具集
+    var utils = RecordPlayer.utils;
+    console.log(utils)
+
+
+    // 处理url，这个URL是服务器抄送给开发者的地址，开发者务必将文件放置在页面能够访问的地址。
+    var URLprefix = location.protocol + '//' + location.host + location.pathname; // 如果路径访问不了，调整一下代码
+    var vUrl = URLprefix + '/2550102203-51349077821394-1567049495368-0.mp4';
+    var canvasUrl = URLprefix + '/5428477283-201757027633025-1576226778486-0.gz'
+    // var canvasUrl = URLprefix + '/2550102203-200582335249025-1567049494472-0.gz'
+
+
+    // var vUrl = URLprefix + '/7115833661-51347386435540-1566997878430-0.mp4';
+    // var canvasUrl = URLprefix +'/7115833661-200575825119361-1566998662237-0.gz'
+    // var canvasUrl = URLprefix + '/2550102203-200584432129921-1567065876434-0.gz'
+
+    // 通过parseUrl，能够获取到录制文件的时间戳和cid等信息。
+    console.log('uitls.RECORD_FILE:', utils.RECORD_FILE.source)
+    var video = utils.parseUrl(vUrl)
+    var draw = utils.parseUrl(canvasUrl);
+
+    // 这个是这个录制文件所属的帐号，不是uid
+    video.account = 'cs1';
+    // 这个是录制文件的线上地址，SDK内部不会对这个地址做解析了，所以url可以是其他对象存储上的地址，或者携带鉴权信息的url
+    video.url = vUrl
+
+    // Object.assign(video, { account: 'cs1', url: vUrl })
+    Object.assign(draw, { account: 'cs1', url: canvasUrl })
+
+
+    /**
+     * 最终的统一格式是这样的
+    interface IRecordFileParam {
+      account: string, // 文件对应的用户帐号是什么
+      url: string, // 文件可以直接访问的地址, 可以是其他对象存储上的地址，或者携带鉴权信息的url
+      uid: string, // 这个帐号在会话里使用的uid是什么
+      cid: string; // 这个类型的文件的channel id
+      timestamp: number, // 录制文件开始时间戳
+      chunk: number,// 这个是第几个文件
+      mixed: boolean,// 是否是混合录制文件
+      type: 'mp4' | 'flv' | 'aac' | 'gz';//文件格式是什么
+    }
+     */
+    console.log('video:', video)
+
+    // 这个是一个处理函数，用于兼容旧版本的白板录制文件中，需要使用的是nim的docId去下载文件
+    var handleFileForOldVersion = function (type, file) {
+      console.log(type, file);
+      if (type === 'img') {
+        let docId = file.docId;
+        if (!file.urlStr && docId !== '0' && docId !== '') {
+          // 这里需要调用nim去获取文件
+          let currentPage = file.currentPage;
+          return new Promise((resolve, reject) => {
+            nim.getFile({
+              docId,
+              success: function (cloudFile) {
+                console.log('getFile success', cloudFile)
+                const fileTypeMap = {
+                  '10': 'jpg',
+                  '11': 'png',
+                  '0': 'unknown'
+                }
+                let urlStr = `${cloudFile.prefix}_${cloudFile.type}_{index}.${fileTypeMap[cloudFile.transType]}`
+                let url = urlStr.replace('{index}', currentPage)
+
+                // 修改file
+                file.pageCount = parseInt(cloudFile.pageCount);
+                file.url = url;
+                file.urlStr = urlStr;
+                resolve(file)
+              },
+              error: function (error) {
+                console.error('getFile error', error)
+                reject(error)
+              }
+            })
+          })
+        }
+      }
+      return Promise.resolve(file)
+    }
+
+    var recall = new RecordPlayer({
+      account: 'cs1', // 这个是以谁的角度来看录制
+      // ownerAccount: 'cs1',
+      // identity: 'owner',
+      width: 1920,
+      height: 1080,
+      isCompatible: false, // 是否是兼容模式，对于老版本的录制文件，需要做不同的解析
+      // handleFile: handleFileForOldVersion, // 如果isCompatible为 false， 则不用传入这个函数，
+      // 无论有多少个录制文件，都按照上面的格式放入到这个数组中，顺序不影响，可播放多人的录制
+      files: [draw],// 多个视频或者白板，都会有visibaleChange事件告诉开发者处理对应的dom
+    });
+    recall.on('visibleChange', function (type, option, callback) {
+      console.warn('visibleChange', type, option);
+      // 在这个事件里，开发者可以自己控制DOM的展示或者消失的，
+      // 甚至是一个异步的展示也是可以的，回放录制的player内部会暂停。
+      // 如果是show，开发者需要传入对应的dom节点。
+      // 如果是hide, 开发者仍需要调用callback来让回放录制继续播放
+
+      switch (option.type) {
+        case 'gz': {
+          if (type === 'show') {
+            // 展示白板
+            dom = document.getElementById('wb')
+            // 开发者可以在这个时候展示白板容器区域，完成后，将dom传入callback
+            callback(dom)
+          } else {
+            // 开发者可以在这个时候隐藏白板容器区域，完成后，调用callback回调
+            callback()
+          }
+          break;
+        }
+        case 'aac':
+        case 'flv':
+        case 'mp4': {
+          var videoDom = document.getElementById('js-video')
+          if (type === 'show') {
+            // 展示白板
+            // 开发者自己控制视频区域的展示以及布局，完成后，将video标签或者一个容器传入callback
+            callback(videoDom)
+          } else {
+            // 开发者自己控制视频区域的隐藏以及布局，完成后，调用callback回调
+            videoDom.querySelector('video').remove()
+            callback()
+          }
+
+          break
+        }
+      }
+
+    })
+
+    /**
+     * recall实例将会抛出这些事件
+     * interface IRecallEvent {
+        ready: [],
+        visibleChange: ['show' | 'hide', IRecordFileParam, (dom: HTMLElement) => void]
+        tick: [number],
+        pause: [];
+        finish: [];
+        play: [];
+        finished: [];
+      }
+     */
+    recall.on('ready', () => {
+      // 播放器已经初始化完毕了
+      // RecordPlayerUI 是提供的简单的播放控制的组件，使用preact编写，开发者可以根据提供的源文件，编写其他框架的播放控制UI
+      const unmountFunc = RecordPlayerUI.mount(document.getElementById('tb'), recall)
+      console.log('ready', recall, unmountFunc);
+    })
+
+    /**
+     * RecordPlayerUI
+     */
+  </script>
+</body>
+
+</html>

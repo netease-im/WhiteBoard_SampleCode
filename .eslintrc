@@ -1,0 +1,15 @@
+{
+  "extends": ["standard", "standard-jsx"],
+  "rules": {
+    "no-unused-vars": [
+      "warn",
+      {
+        "varsIgnorePattern": "^h$"
+      }
+    ],
+    "space-before-function-paren": "off",
+    "comma-dangle": "off",
+    "no-extra-semi": "warn"
+  },
+  "globals": { "Image": "readonly" }
+}

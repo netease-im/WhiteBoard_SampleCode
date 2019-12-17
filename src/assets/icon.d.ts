@@ -1,0 +1,33 @@
+declare const icons: {
+    laserPen: any;
+    color: any;
+    width: any;
+    free: any;
+    line: any;
+    circle: any;
+    solidCircle: any;
+    ellipse: any;
+    solidEllipse: any;
+    rect: any;
+    solidRect: any;
+    roundRect: any;
+    solidRoundRect: any;
+    text: any;
+    paint: any;
+    erase: any;
+    undo: any;
+    redo: any;
+    clear: any;
+    up: any;
+    right: any;
+    down: any;
+    left: any;
+    leftEnd: any;
+    rightEnd: any;
+    zoomIn: any;
+    zoomOut: any;
+    img: any;
+    delImg: any;
+};
+export default icons;
+//# sourceMappingURL=icon.d.ts.map
